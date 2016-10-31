@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"unicode"
 
 	"github.com/mijia/modelq/drivers"
+	"github.com/serenize/snaker"
 )
 
 type CodeResult struct {
@@ -112,11 +114,11 @@ func generateModel(dbName, tName string, schema drivers.TableSchema, config Code
 	needTime := false
 	for i, col := range schema {
 		field := ModelField{
-			Name:            toCapitalCase(col.ColumnName),
+			Name:            camelize(toCapitalCase(col.ColumnName)),
 			ColumnName:      col.ColumnName,
 			Type:            col.DataType,
 			IsNullable:      strings.ToUpper(col.IsNullable) == "YES",
-			JsonMeta:        fmt.Sprintf("`json:\"%s\"`", col.ColumnName),
+			JsonMeta:        fmt.Sprintf("`json:\"%s\"`", makeFirstLowerCase(toCapitalCase(col.ColumnName))),
 			IsPrimaryKey:    strings.ToUpper(col.ColumnKey) == "PRI",
 			IsUniqueKey:     strings.ToUpper(col.ColumnKey) == "UNI",
 			IsIndexed:       strings.ToUpper(col.ColumnKey) == "MUL",
@@ -394,4 +396,22 @@ func toCapitalCase(name string) string {
 		}
 	}
 	return string(data[:endPos])
+}
+
+func camelize(s string) string {
+	return snaker.SnakeToCamel(s)
+}
+
+func makeFirstLowerCase(s string) string {
+
+	if len(s) < 2 {
+		return strings.ToLower(s)
+	}
+
+	bts := []byte(s)
+
+	lc := bytes.ToLower([]byte{bts[0]})
+	rest := bts[1:]
+
+	return string(bytes.Join([][]byte{lc, rest}, nil))
 }
